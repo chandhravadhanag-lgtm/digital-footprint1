@@ -238,3 +238,36 @@ Test results verify:
 1. `Sundar Pichai` produces full dynamic profile with DOB, Google/Alphabet, and social links.
 2. `Rahul Kumar` detects multiple distinct candidates and triggers identity disambiguation.
 3. Missing fields fallback cleanly to `"Not found / Not publicly verified"`.
+
+---
+
+## Deployment (Render.com)
+
+This project is configured for **one-click deployment** on [Render.com](https://render.com) (free tier).
+
+### Deploy Steps
+
+1. Go to [https://render.com](https://render.com) and sign up / log in with GitHub
+2. Click **New → Web Service**
+3. Connect your GitHub repo: `chandhravadhanag-lgtm/digital-footprint1`
+4. Render will auto-detect the `render.yaml` — confirm these settings:
+   - **Build Command**: `./build.sh`
+   - **Start Command**: `cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT`
+   - **Plan**: Free
+5. (Optional) Add environment variable `BRAVE_API_KEY` in the Render dashboard for enhanced search
+6. Click **Deploy**
+
+The build process will:
+- Install Python dependencies from `requirements.txt`
+- Install Node.js dependencies and build the React frontend
+- Copy the frontend build into `backend/static/`
+- FastAPI serves both the API and the React SPA from a single service
+
+### Live URL
+
+After deployment, your app will be available at:
+```
+https://digital-footprint-analyzer.onrender.com
+```
+(or whatever name Render assigns)
+
