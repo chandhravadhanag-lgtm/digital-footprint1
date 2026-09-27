@@ -44,8 +44,12 @@ def on_startup():
     finally:
         db.close()
 
-@app.get("/")
-def read_root():
+# --- Production: Serve React frontend build ---
+STATIC_DIR = Path(__file__).parent / "static"
+_HAS_FRONTEND = STATIC_DIR.exists() and (STATIC_DIR / "index.html").exists()
+
+@app.get("/api/info")
+def api_info():
     return {
         "app": "Digital Footprint Analyzer",
         "purpose": "Dynamic public web discovery with identity disambiguation and provenance",
@@ -59,21 +63,18 @@ def health():
     return {
         "status": "healthy",
         "services": ["Wikidata API", "Wikipedia REST API", "GitHub API", "Dynamic Web Search"],
-        "dynamic_search": "active"
+        "dynamic_search": "active",
+        "frontend": "deployed" if _HAS_FRONTEND else "dev-mode"
     }
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
-# --- Production: Serve React frontend build ---
-STATIC_DIR = Path(__file__).parent / "static"
-
-if STATIC_DIR.exists() and (STATIC_DIR / "index.html").exists():
+if _HAS_FRONTEND:
     # Serve static assets (JS, CSS, images)
     app.mount("/assets", StaticFiles(directory=str(STATIC_DIR / "assets")), name="assets")
 
-    # Serve other static files (favicon, etc.)
+    @app.get("/")
+    async def serve_index():
+        return FileResponse(str(STATIC_DIR / "index.html"))
+
     @app.get("/favicon.svg")
     async def favicon():
         return FileResponse(str(STATIC_DIR / "favicon.svg"))
@@ -81,11 +82,22 @@ if STATIC_DIR.exists() and (STATIC_DIR / "index.html").exists():
     # SPA catch-all: serve index.html for any non-API route
     @app.get("/{full_path:path}")
     async def serve_spa(request: Request, full_path: str):
-        # Don't intercept API routes
         if full_path.startswith("api/") or full_path in ("docs", "openapi.json", "redoc", "health"):
             return None
         file_path = STATIC_DIR / full_path
         if file_path.exists() and file_path.is_file():
             return FileResponse(str(file_path))
         return FileResponse(str(STATIC_DIR / "index.html"))
+else:
+    # Dev mode: show JSON info at root
+    @app.get("/")
+    def read_root():
+        return {
+            "app": "Digital Footprint Analyzer",
+            "status": "online",
+            "note": "Frontend running on localhost:5173"
+        }
 
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
