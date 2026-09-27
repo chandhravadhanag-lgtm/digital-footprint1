@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: digital-footprint-analyzer
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.10"
+      - key: NODE_VERSION
+        value: "20.18.0"
+      - key: BRAVE_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        value: "sqlite:///./digitaltrace.db"
